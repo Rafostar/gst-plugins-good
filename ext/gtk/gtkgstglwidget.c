@@ -1,6 +1,7 @@
 /*
  * GStreamer
  * Copyright (C) 2015 Matthew Waters <matthew@centricular.com>
+ * Copyright (C) 2020 Rafał Dzięgiel <rafostar.github@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -30,12 +31,20 @@
 #include <gst/video/video.h>
 
 #if GST_GL_HAVE_WINDOW_X11 && defined (GDK_WINDOWING_X11)
+#if defined(BUILD_FOR_GTK4)
+#include <gdk/x11/gdkx.h>
+#else
 #include <gdk/gdkx.h>
+#endif
 #include <gst/gl/x11/gstgldisplay_x11.h>
 #endif
 
 #if GST_GL_HAVE_WINDOW_WAYLAND && defined (GDK_WINDOWING_WAYLAND)
+#if defined(BUILD_FOR_GTK4)
+#include <gdk/wayland/gdkwayland.h>
+#else
 #include <gdk/gdkwayland.h>
+#endif
 #include <gst/gl/wayland/gstgldisplay_wayland.h>
 #endif
 
@@ -78,8 +87,7 @@ static const GLfloat vertices[] = {
 G_DEFINE_TYPE_WITH_CODE (GtkGstGLWidget, gtk_gst_gl_widget, GTK_TYPE_GL_AREA,
     G_ADD_PRIVATE (GtkGstGLWidget)
     GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "gtkgstglwidget", 0,
-        "Gtk Gst GL Widget");
-    );
+        "Gtk Gst GL Widget"));
 
 static void
 gtk_gst_gl_widget_bind_buffer (GtkGstGLWidget * gst_widget)
@@ -407,8 +415,11 @@ gtk_gst_gl_widget_init (GtkGstGLWidget * gst_widget)
 
   GST_INFO ("Created %" GST_PTR_FORMAT, priv->display);
 
+  /* GTK4 always has alpha */
+#if !defined(BUILD_FOR_GTK4)
   gtk_gl_area_set_has_alpha (GTK_GL_AREA (gst_widget),
       !base_widget->ignore_alpha);
+#endif
 }
 
 static void

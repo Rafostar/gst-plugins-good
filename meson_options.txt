@@ -53,6 +53,7 @@ option('dv1394', type : 'feature', value : 'auto', description : 'Digital IEEE13
 option('flac', type : 'feature', value : 'auto', description : 'FLAC audio codec plugin')
 option('gdk-pixbuf', type : 'feature', value : 'auto', description : 'gdk-pixbuf image decoder, overlay, and sink plugin')
 option('gtk3', type : 'feature', value : 'auto', description : 'GTK+ video sink plugin')
+option('gtk4', type : 'feature', value : 'auto', description : 'GTK4 video sink plugin')
 option('jack', type : 'feature', value : 'auto', description : 'JACK audio source/sink plugin')
 option('jpeg', type : 'feature', value : 'auto', description : 'JPEG image codec plugin')
 option('lame', type : 'feature', value : 'auto', description : 'LAME mp3 audio encoder plugin')

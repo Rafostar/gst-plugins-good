@@ -1,6 +1,7 @@
 /*
  * GStreamer
  * Copyright (C) 2015 Matthew Waters <matthew@centricular.com>
+ * Copyright (C) 2020 Rafał Dzięgiel <rafostar.github@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -25,6 +26,10 @@
 #include <gst/gst.h>
 #include <gst/video/video.h>
 
+#if !defined(BUILD_FOR_GTK4)
+#include <gdk/gdk.h>
+#endif
+
 #define GTK_GST_BASE_WIDGET(w)         ((GtkGstBaseWidget *)(w))
 #define GTK_GST_BASE_WIDGET_CLASS(k)   ((GtkGstBaseWidgetClass *)(k))
 #define GTK_GST_BASE_WIDGET_LOCK(w)    g_mutex_lock(&((GtkGstBaseWidget*)(w))->lock)
@@ -39,9 +44,7 @@ struct _GtkGstBaseWidget
 {
   union {
     GtkDrawingArea drawing_area;
-#if GTK_CHECK_VERSION(3, 15, 0)
     GtkGLArea gl_area;
-#endif
   } parent;
 
   /* properties */
@@ -75,9 +78,7 @@ struct _GtkGstBaseWidgetClass
 {
   union {
     GtkDrawingAreaClass drawing_area_class;
-#if GTK_CHECK_VERSION(3, 15, 0)
     GtkGLAreaClass gl_area_class;
-#endif
   } parent_class;
 };
 

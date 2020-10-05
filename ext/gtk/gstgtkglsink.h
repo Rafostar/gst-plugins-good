@@ -1,6 +1,7 @@
 /*
  * GStreamer
  * Copyright (C) 2015 Matthew Waters <matthew@centricular.com>
+ * Copyright (C) 2020 Rafał Dzięgiel <rafostar.github@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -44,21 +45,21 @@ G_DECLARE_FINAL_TYPE (GstGtkGLSink, gst_gtk_gl_sink, GST, GTK_GL_SINK,
 struct _GstGtkGLSink
 {
   /* <private> */
-  GstGtkBaseSink        parent;
+  GstGtkBaseSink      parent;
 
-  GstGLDisplay         *display;
-  GstGLContext         *context;
-  GstGLContext         *gtk_context;
+  GstGLDisplay          *display;
+  GstGLContext          *context;
+  GstGLContext          *gtk_context;
 
-  GstGLUpload          *upload;
-  GstBuffer            *uploaded_buffer;
+  GstGLUpload           *upload;
+  GstBuffer             *uploaded_buffer;
 
   /* read/write with object lock */
-  gint                  display_width;
-  gint                  display_height;
+  gint                   display_width;
+  gint                   display_height;
 
-  gulong                size_allocate_sig_handler;
-  gulong                widget_destroy_sig_handler;
+  gulong                 size_allocate_sig_handler;
+  gulong                 widget_destroy_sig_handler;
 };
 
 G_END_DECLS

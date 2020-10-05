@@ -1,6 +1,5 @@
 /*
  * GStreamer
- * Copyright (C) 2015 Matthew Waters <matthew@centricular.com>
  * Copyright (C) 2020 Rafał Dzięgiel <rafostar.github@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -19,41 +18,12 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
+#if defined(BUILD_FOR_GTK4)
+#define GTKCONFIG_PLUGIN gtk4
+#define GTKCONFIG_NAME "GTK4"
+#define GTKCONFIG_GLSINK "gtk4glsink"
+#else
+#define GTKCONFIG_PLUGIN gtk
+#define GTKCONFIG_NAME "GTK"
+#define GTKCONFIG_GLSINK "gtkglsink"
 #endif
-
-#include "gtkconfig.h"
-
-#if !defined(BUILD_FOR_GTK4)
-#include "gstgtksink.h"
-#endif
-
-#if defined(HAVE_GTK_GL)
-#include "gstgtkglsink.h"
-#endif
-
-static gboolean
-plugin_init (GstPlugin * plugin)
-{
-#if !defined(BUILD_FOR_GTK4)
-  if (!gst_element_register (plugin, "gtksink",
-        GST_RANK_NONE, GST_TYPE_GTK_SINK)) {
-    return FALSE;
-  }
-#endif
-
-#if defined(HAVE_GTK_GL)
-  if (!gst_element_register (plugin, GTKCONFIG_GLSINK,
-        GST_RANK_NONE, GST_TYPE_GTK_GL_SINK)) {
-    return FALSE;
-  }
-#endif
-  return TRUE;
-}
-
-GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
-    GST_VERSION_MINOR,
-    GTKCONFIG_PLUGIN, GTKCONFIG_NAME " sink",
-    plugin_init, PACKAGE_VERSION, GST_LICENSE, GST_PACKAGE_NAME,
-    GST_PACKAGE_ORIGIN)

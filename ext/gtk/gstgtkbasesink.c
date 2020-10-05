@@ -1,6 +1,7 @@
 /*
  * GStreamer
  * Copyright (C) 2015 Matthew Waters <matthew@centricular.com>
+ * Copyright (C) 2020 Rafał Dzięgiel <rafostar.github@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -77,7 +78,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (GstGtkBaseSink, gst_gtk_base_sink,
     G_IMPLEMENT_INTERFACE (GST_TYPE_NAVIGATION,
         gst_gtk_base_sink_navigation_interface_init);
     GST_DEBUG_CATEGORY_INIT (gst_debug_gtk_base_sink,
-        "gtkbasesink", 0, "Gtk Video Sink base class"));
+        "gtkbasesink", 0, "GTK Video Sink base class"));
 
 
 static void
@@ -97,7 +98,7 @@ gst_gtk_base_sink_class_init (GstGtkBaseSinkClass * klass)
   gobject_class->get_property = gst_gtk_base_sink_get_property;
 
   g_object_class_install_property (gobject_class, PROP_WIDGET,
-      g_param_spec_object ("widget", "Gtk Widget",
+      g_param_spec_object ("widget", "GTK Widget",
           "The GtkWidget to place in the widget hierarchy "
           "(must only be get from the GTK main thread)",
           GTK_TYPE_WIDGET, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
@@ -182,7 +183,11 @@ gst_gtk_base_sink_get_widget (GstGtkBaseSink * gtk_sink)
 
   /* Ensure GTK is initialized, this has no side effect if it was already
    * initialized. Also, we do that lazily, so the application can be first */
-  if (!gtk_init_check (NULL, NULL)) {
+  if (!gtk_init_check (
+#if !defined(BUILD_FOR_GTK4)
+      NULL, NULL
+#endif
+  )) {
     GST_ERROR_OBJECT (gtk_sink, "Could not ensure GTK initialization.");
     return NULL;
   }
@@ -313,25 +318,53 @@ gst_gtk_base_sink_start_on_main (GstBaseSink * bsink)
   GstGtkBaseSink *gst_sink = GST_GTK_BASE_SINK (bsink);
   GstGtkBaseSinkClass *klass = GST_GTK_BASE_SINK_GET_CLASS (bsink);
   GtkWidget *toplevel;
+#if defined(BUILD_FOR_GTK4)
+  GtkRoot *root;
+#endif
 
   if (gst_gtk_base_sink_get_widget (gst_sink) == NULL)
     return FALSE;
 
   /* After this point, gtk_sink->widget will always be set */
 
+#if defined(BUILD_FOR_GTK4)
+  root = gtk_widget_get_root (GTK_WIDGET (gst_sink->widget));
+  if (!GTK_IS_ROOT (root)) {
+    GtkNative *native = gtk_widget_get_native (GTK_WIDGET (gst_sink->widget));
+    toplevel = (native) ? GTK_WIDGET (native) : GTK_WIDGET (gst_sink->widget);
+#else
   toplevel = gtk_widget_get_toplevel (GTK_WIDGET (gst_sink->widget));
   if (!gtk_widget_is_toplevel (toplevel)) {
+#endif
     /* sanity check */
     g_assert (klass->window_title);
 
     /* User did not add widget its own UI, let's popup a new GtkWindow to
      * make gst-launch-1.0 work. */
-    gst_sink->window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    gst_sink->window = gtk_window_new (
+#if !defined(BUILD_FOR_GTK4)
+        GTK_WINDOW_TOPLEVEL
+#endif
+    );
     gtk_window_set_default_size (GTK_WINDOW (gst_sink->window), 640, 480);
     gtk_window_set_title (GTK_WINDOW (gst_sink->window), klass->window_title);
-    gtk_container_add (GTK_CONTAINER (gst_sink->window), toplevel);
-    gst_sink->window_destroy_id = g_signal_connect (gst_sink->window, "destroy",
+#if defined(BUILD_FOR_GTK4)
+    gtk_window_set_child (GTK_WINDOW (
+#else
+    gtk_container_add (GTK_CONTAINER (
+#endif
+        gst_sink->window), toplevel);
+
+    gst_sink->window_destroy_id = g_signal_connect (
+#if defined(BUILD_FOR_GTK4)
+        GTK_WINDOW (gst_sink->window),
+#else
+        gst_sink->window,
+#endif
+        "destroy",
         G_CALLBACK (window_destroy_cb), gst_sink);
+
+    gtk_widget_show(gst_sink->window);
   }
 
   return TRUE;
@@ -350,7 +383,11 @@ gst_gtk_base_sink_stop_on_main (GstBaseSink * bsink)
   GstGtkBaseSink *gst_sink = GST_GTK_BASE_SINK (bsink);
 
   if (gst_sink->window) {
+#if defined(BUILD_FOR_GTK4)
+    gtk_window_destroy (GTK_WINDOW (gst_sink->window));
+#else
     gtk_widget_destroy (gst_sink->window);
+#endif
     gst_sink->window = NULL;
     gst_sink->widget = NULL;
   }
@@ -373,7 +410,9 @@ gst_gtk_base_sink_stop (GstBaseSink * bsink)
 static void
 gst_gtk_widget_show_all_and_unref (GtkWidget * widget)
 {
+#if !defined(BUILD_FOR_GTK4)
   gtk_widget_show_all (widget);
+#endif
   g_object_unref (widget);
 }
 
