@@ -330,8 +330,13 @@ gst_gtk_base_sink_start_on_main (GstBaseSink * bsink)
 #if defined(BUILD_FOR_GTK4)
   root = gtk_widget_get_root (GTK_WIDGET (gst_sink->widget));
   if (!GTK_IS_ROOT (root)) {
-    GtkNative *native = gtk_widget_get_native (GTK_WIDGET (gst_sink->widget));
-    toplevel = (native) ? GTK_WIDGET (native) : GTK_WIDGET (gst_sink->widget);
+    GtkWidget *parent = gtk_widget_get_parent (GTK_WIDGET (gst_sink->widget));
+    if (parent) {
+      GtkWidget *temp_parent;
+      while ((temp_parent = gtk_widget_get_parent(parent)))
+        parent = temp_parent;
+    }
+    toplevel = (parent) ? parent : GTK_WIDGET (gst_sink->widget);
 #else
   toplevel = gtk_widget_get_toplevel (GTK_WIDGET (gst_sink->widget));
   if (!gtk_widget_is_toplevel (toplevel)) {

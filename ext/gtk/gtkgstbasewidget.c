@@ -416,17 +416,13 @@ gtk_gst_base_widget_motion_event (GtkEventControllerMotion * motion_controller, 
   GtkGstBaseWidget *base_widget = GTK_GST_BASE_WIDGET (widget);
   GstElement *element;
 
-  GST_DEBUG ("motion event");
-
-  /* Sometimes GTK might generate motion events during window redraws,
-   * so we check for the difference in coords to prevent that */
+  /* Sometimes GTK might generate motion events with the same coords during
+   * window redraws, so we check for the differences to prevent that */
   if(base_widget->cursor_coords_x == x && base_widget->cursor_coords_y == y)
     return FALSE;
 
   base_widget->cursor_coords_x = x;
   base_widget->cursor_coords_y = y;
-
-  GST_DEBUG ("NEW COORDS");
 
   if ((element = g_weak_ref_get (&base_widget->element))) {
     if (GST_IS_NAVIGATION (element)) {

@@ -45,7 +45,7 @@ G_DECLARE_FINAL_TYPE (GstGtkGLSink, gst_gtk_gl_sink, GST, GTK_GL_SINK,
 struct _GstGtkGLSink
 {
   /* <private> */
-  GstGtkBaseSink      parent;
+  GstGtkBaseSink         parent;
 
   GstGLDisplay          *display;
   GstGLContext          *context;

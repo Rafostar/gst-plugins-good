@@ -52,14 +52,14 @@ GType gst_gtk_base_sink_get_type (void);
 struct _GstGtkBaseSink
 {
   /* <private> */
-  GstVideoSink         parent;
+  GstVideoSink          parent;
 
-  GstVideoInfo         v_info;
+  GstVideoInfo          v_info;
 
   GtkGstBaseWidget     *widget;
 
   /* properties */
-  gboolean             force_aspect_ratio;
+  gboolean              force_aspect_ratio;
   GBinding             *bind_aspect_ratio;
 
   gint                  par_n;
@@ -70,8 +70,8 @@ struct _GstGtkBaseSink
   GBinding             *bind_ignore_alpha;
 
   GtkWidget            *window;
-  gulong               widget_destroy_id;
-  gulong               window_destroy_id;
+  gulong                widget_destroy_id;
+  gulong                window_destroy_id;
 };
 
 /**
