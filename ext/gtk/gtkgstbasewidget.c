@@ -519,6 +519,8 @@ gtk_gst_base_widget_init (GtkGstBaseWidget * widget)
       G_CALLBACK (gtk_gst_base_widget_button_event), NULL);
 
 #if defined(BUILD_FOR_GTK4)
+  gtk_gesture_single_set_button (GTK_GESTURE_SINGLE (click_gesture), GDK_BUTTON_PRIMARY);
+
   gtk_widget_add_controller (GTK_WIDGET (widget), key_controller);
   gtk_widget_add_controller (GTK_WIDGET (widget), motion_controller);
   gtk_widget_add_controller (GTK_WIDGET (widget), GTK_EVENT_CONTROLLER (click_gesture));
