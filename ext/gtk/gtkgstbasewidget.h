@@ -43,7 +43,9 @@ typedef struct _GtkGstBaseWidgetClass GtkGstBaseWidgetClass;
 struct _GtkGstBaseWidget
 {
   union {
+#if !defined(BUILD_FOR_GTK4)
     GtkDrawingArea drawing_area;
+#endif
     GtkGLArea gl_area;
   } parent;
 
@@ -65,6 +67,10 @@ struct _GtkGstBaseWidget
   GstVideoInfo pending_v_info;
   guint display_ratio_num;
   guint display_ratio_den;
+
+  /* cursor motion coords */
+  gdouble cursor_coords_x;
+  gdouble cursor_coords_y;
 
   /*< private >*/
   GMutex lock;
