@@ -205,9 +205,11 @@ gst_gtk_base_sink_get_widget (GstGtkBaseSink * gtk_sink)
   gtk_sink->bind_pixel_aspect_ratio =
       g_object_bind_property (gtk_sink, "pixel-aspect-ratio", gtk_sink->widget,
       "pixel-aspect-ratio", G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+#if !defined(BUILD_FOR_GTK4)
   gtk_sink->bind_ignore_alpha =
       g_object_bind_property (gtk_sink, "ignore-alpha", gtk_sink->widget,
       "ignore-alpha", G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+#endif
 
   /* Take the floating ref, other wise the destruction of the container will
    * make this widget disappear possibly before we are done. */
