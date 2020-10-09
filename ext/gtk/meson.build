@@ -10,6 +10,13 @@ gtk_lib_added = false
 foreach gtk_ver : gtk_versions
   gtkv = 'gtk' + gtk_ver.to_string()
 
+  if gtk_ver > 3
+    allow_experiments = get_option(gtkv + '-experiments')
+    if not allow_experiments
+      continue
+    endif
+  endif
+
   gtk_state = get_option(gtkv)
   if gtk_state.disabled()
     continue

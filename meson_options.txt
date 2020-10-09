@@ -75,6 +75,9 @@ option('vpx', type : 'feature', value : 'auto', description : 'VP8 and VP9 video
 option('waveform', type : 'feature', value : 'auto', description : 'Windows waveform audio sink plugin')
 option('wavpack', type : 'feature', value : 'auto', description : 'Wavpack audio codec plugin')
 
+# gtk plugin options
+option('gtk4-experiments', type : 'boolean', value : false, description : 'Allow compiling experimental GTK4 plugin')
+
 # rpicamsrc plugin options
 option('rpicamsrc', type : 'feature', value : 'auto', description : 'Raspberry Pi camera module plugin')
 option('rpi-header-dir', type : 'string', value : '/opt/vc/include', description : 'Directory where VideoCore/MMAL headers and bcm_host.h can be found')
