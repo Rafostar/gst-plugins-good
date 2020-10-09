@@ -87,7 +87,7 @@ static const GLfloat vertices[] = {
 G_DEFINE_TYPE_WITH_CODE (GtkGstGLWidget, gtk_gst_gl_widget, GTK_TYPE_GL_AREA,
     G_ADD_PRIVATE (GtkGstGLWidget)
     GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "gtkgstglwidget", 0,
-        "Gtk Gst GL Widget"));
+        "GTK Gst GL Widget"));
 
 static void
 gtk_gst_gl_widget_bind_buffer (GtkGstGLWidget * gst_widget)
@@ -281,10 +281,10 @@ gtk_gst_gl_widget_render (GtkGLArea * widget, GdkGLContext * context)
     base_widget->buffer = buffer;
     base_widget->pending_buffer = NULL;
   }
-/*
+
   GST_DEBUG ("rendering buffer %p with gdk context %p",
       base_widget->buffer, context);
-*/
+
   _redraw_texture (GTK_GST_GL_WIDGET (widget), priv->current_tex);
   gst_gl_overlay_compositor_draw_overlays (priv->overlay_compositor);
 

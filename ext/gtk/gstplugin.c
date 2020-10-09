@@ -38,14 +38,14 @@ plugin_init (GstPlugin * plugin)
 {
 #if !defined(BUILD_FOR_GTK4)
   if (!gst_element_register (plugin, "gtksink",
-        GST_RANK_NONE, GST_TYPE_GTK_SINK)) {
+          GST_RANK_NONE, GST_TYPE_GTK_SINK)) {
     return FALSE;
   }
 #endif
 
 #if defined(HAVE_GTK_GL)
   if (!gst_element_register (plugin, GTKCONFIG_GLSINK,
-        GST_RANK_NONE, GST_TYPE_GTK_GL_SINK)) {
+          GST_RANK_NONE, GST_TYPE_GTK_GL_SINK)) {
     return FALSE;
   }
 #endif

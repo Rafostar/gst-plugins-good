@@ -115,10 +115,13 @@ gst_gtk_base_sink_class_init (GstGtkBaseSinkClass * klass)
           "The pixel aspect ratio of the device", DEFAULT_PAR_N, DEFAULT_PAR_D,
           G_MAXINT, 1, 1, 1, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
+  /* Disabling alpha was removed in GTK4 */
+#if !defined(BUILD_FOR_GTK4)
   g_object_class_install_property (gobject_class, PROP_IGNORE_ALPHA,
       g_param_spec_boolean ("ignore-alpha", "Ignore Alpha",
           "When enabled, alpha will be ignored and converted to black",
           DEFAULT_IGNORE_ALPHA, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+#endif
 
   gobject_class->finalize = gst_gtk_base_sink_finalize;
 
@@ -185,9 +188,9 @@ gst_gtk_base_sink_get_widget (GstGtkBaseSink * gtk_sink)
    * initialized. Also, we do that lazily, so the application can be first */
   if (!gtk_init_check (
 #if !defined(BUILD_FOR_GTK4)
-      NULL, NULL
+          NULL, NULL
 #endif
-  )) {
+      )) {
     GST_ERROR_OBJECT (gtk_sink, "Could not ensure GTK initialization.");
     return NULL;
   }
@@ -333,7 +336,7 @@ gst_gtk_base_sink_start_on_main (GstBaseSink * bsink)
     GtkWidget *parent = gtk_widget_get_parent (GTK_WIDGET (gst_sink->widget));
     if (parent) {
       GtkWidget *temp_parent;
-      while ((temp_parent = gtk_widget_get_parent(parent)))
+      while ((temp_parent = gtk_widget_get_parent (parent)))
         parent = temp_parent;
     }
     toplevel = (parent) ? parent : GTK_WIDGET (gst_sink->widget);
@@ -350,7 +353,7 @@ gst_gtk_base_sink_start_on_main (GstBaseSink * bsink)
 #if !defined(BUILD_FOR_GTK4)
         GTK_WINDOW_TOPLEVEL
 #endif
-    );
+        );
     gtk_window_set_default_size (GTK_WINDOW (gst_sink->window), 640, 480);
     gtk_window_set_title (GTK_WINDOW (gst_sink->window), klass->window_title);
 #if defined(BUILD_FOR_GTK4)
@@ -358,7 +361,7 @@ gst_gtk_base_sink_start_on_main (GstBaseSink * bsink)
 #else
     gtk_container_add (GTK_CONTAINER (
 #endif
-        gst_sink->window), toplevel);
+            gst_sink->window), toplevel);
 
     gst_sink->window_destroy_id = g_signal_connect (
 #if defined(BUILD_FOR_GTK4)
@@ -366,8 +369,7 @@ gst_gtk_base_sink_start_on_main (GstBaseSink * bsink)
 #else
         gst_sink->window,
 #endif
-        "destroy",
-        G_CALLBACK (window_destroy_cb), gst_sink);
+        "destroy", G_CALLBACK (window_destroy_cb), gst_sink);
 
 #if defined(BUILD_FOR_GTK4)
     gtk_window_present (GTK_WINDOW (gst_sink->window));

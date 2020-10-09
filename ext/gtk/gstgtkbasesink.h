@@ -1,7 +1,6 @@
 /*
  * GStreamer
  * Copyright (C) 2015 Matthew Waters <matthew@centricular.com>
- * Copyright (C) 2020 Rafał Dzięgiel <rafostar.github@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -52,14 +51,14 @@ GType gst_gtk_base_sink_get_type (void);
 struct _GstGtkBaseSink
 {
   /* <private> */
-  GstVideoSink          parent;
+  GstVideoSink         parent;
 
-  GstVideoInfo          v_info;
+  GstVideoInfo         v_info;
 
   GtkGstBaseWidget     *widget;
 
   /* properties */
-  gboolean              force_aspect_ratio;
+  gboolean             force_aspect_ratio;
   GBinding             *bind_aspect_ratio;
 
   gint                  par_n;
@@ -70,8 +69,8 @@ struct _GstGtkBaseSink
   GBinding             *bind_ignore_alpha;
 
   GtkWidget            *window;
-  gulong                widget_destroy_id;
-  gulong                window_destroy_id;
+  gulong               widget_destroy_id;
+  gulong               window_destroy_id;
 };
 
 /**

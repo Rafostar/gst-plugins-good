@@ -98,7 +98,7 @@ gst_gtk_gl_sink_class_init (GstGtkGLSinkClass * klass)
 #if defined(BUILD_FOR_GTK4)
       ", Rafał Dzięgiel <rafostar.github@gmail.com>"
 #endif
-  );
+      );
 
   gst_element_class_add_static_pad_template (gstelement_class,
       &gst_gtk_gl_sink_template);
@@ -186,8 +186,6 @@ gst_gtk_gl_sink_start (GstBaseSink * bsink)
   gst_widget = GTK_GST_GL_WIDGET (base_sink->widget);
 
 #if !defined(BUILD_FOR_GTK4)
-  _size_changed_cb (GTK_WIDGET (gst_widget), NULL, gtk_sink);
-
   /* Track the allocation size */
   gtk_sink->size_allocate_sig_handler =
       g_signal_connect (gst_widget, "size-allocate",
