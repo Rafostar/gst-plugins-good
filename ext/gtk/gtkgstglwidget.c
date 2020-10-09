@@ -281,10 +281,10 @@ gtk_gst_gl_widget_render (GtkGLArea * widget, GdkGLContext * context)
     base_widget->buffer = buffer;
     base_widget->pending_buffer = NULL;
   }
-
+/*
   GST_DEBUG ("rendering buffer %p with gdk context %p",
       base_widget->buffer, context);
-
+*/
   _redraw_texture (GTK_GST_GL_WIDGET (widget), priv->current_tex);
   gst_gl_overlay_compositor_draw_overlays (priv->overlay_compositor);
 

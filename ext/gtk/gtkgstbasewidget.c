@@ -280,14 +280,23 @@ gtk_gst_base_widget_key_event (GtkEventControllerKey * key_controller,
   GtkGstBaseWidget *base_widget = GTK_GST_BASE_WIDGET (widget);
   GstElement *element;
 
+  GST_DEBUG ("got key event");
+
   if ((element = g_weak_ref_get (&base_widget->element))) {
+    GST_DEBUG ("key event weak");
     if (GST_IS_NAVIGATION (element)) {
       GdkEvent *event = _get_current_event (controller);
       const gchar *str = _gdk_key_to_navigation_string (keyval);
+      GST_DEBUG ("key event IS NAVIGATION");
 
       if (str) {
         const gchar *key_type = gdk_event_get_event_type (event) == GDK_KEY_PRESS
             ? "key-press" : "key-release";
+        if (gdk_event_get_event_type (event) == GDK_KEY_PRESS)
+          GST_DEBUG ("send key PRESS");
+        else
+          GST_DEBUG ("send key RELEASE");
+
         gst_navigation_send_key_event (GST_NAVIGATION (element), key_type, str);
       }
       _gdk_event_free (event);
@@ -530,6 +539,7 @@ gtk_gst_base_widget_init (GtkGstBaseWidget * widget)
       G_CALLBACK (gtk_gst_base_widget_button_event), NULL);
 
 #if defined(BUILD_FOR_GTK4)
+  gtk_widget_set_focusable (GTK_WIDGET (widget), TRUE);
   gtk_gesture_single_set_button (GTK_GESTURE_SINGLE (click_gesture), GDK_BUTTON_PRIMARY);
 
   gtk_widget_add_controller (GTK_WIDGET (widget), key_controller);

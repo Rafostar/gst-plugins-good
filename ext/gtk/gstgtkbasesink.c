@@ -370,7 +370,7 @@ gst_gtk_base_sink_start_on_main (GstBaseSink * bsink)
         G_CALLBACK (window_destroy_cb), gst_sink);
 
 #if defined(BUILD_FOR_GTK4)
-    gtk_window_present(GTK_WINDOW (gst_sink->window));
+    gtk_window_present (GTK_WINDOW (gst_sink->window));
 #endif
   }
 
