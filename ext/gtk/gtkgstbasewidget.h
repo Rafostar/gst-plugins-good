@@ -83,7 +83,9 @@ struct _GtkGstBaseWidget
 struct _GtkGstBaseWidgetClass
 {
   union {
+#if !defined(BUILD_FOR_GTK4)
     GtkDrawingAreaClass drawing_area_class;
+#endif
     GtkGLAreaClass gl_area_class;
   } parent_class;
 };
