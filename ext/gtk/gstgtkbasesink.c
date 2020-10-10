@@ -165,6 +165,8 @@ gst_gtk_base_sink_finalize (GObject * object)
 static void
 widget_destroy_cb (GtkWidget * widget, GstGtkBaseSink * gtk_sink)
 {
+  GST_DEBUG ("running widget destroy");
+
   GST_OBJECT_LOCK (gtk_sink);
   g_clear_object (&gtk_sink->widget);
   GST_OBJECT_UNLOCK (gtk_sink);
@@ -173,6 +175,8 @@ widget_destroy_cb (GtkWidget * widget, GstGtkBaseSink * gtk_sink)
 static void
 window_destroy_cb (GtkWidget * widget, GstGtkBaseSink * gtk_sink)
 {
+  GST_DEBUG ("running window destroy");
+
   GST_OBJECT_LOCK (gtk_sink);
   gtk_sink->window = NULL;
   GST_OBJECT_UNLOCK (gtk_sink);
