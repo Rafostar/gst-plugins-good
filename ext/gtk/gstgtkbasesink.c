@@ -182,11 +182,6 @@ window_destroy_cb (GtkWidget * widget, GstGtkBaseSink * gtk_sink)
   GST_OBJECT_LOCK (gtk_sink);
   gtk_sink->window = NULL;
   GST_OBJECT_UNLOCK (gtk_sink);
-
-  /* Remove previously taken widget reference via "gst_object_ref_sink"
-   * if it still exists at this point in order to destroy widget */
-  if (gtk_sink->widget != NULL)
-    g_object_unref (gtk_sink->widget);
 }
 
 static GtkGstBaseWidget *
@@ -383,10 +378,6 @@ gst_gtk_base_sink_start_on_main (GstBaseSink * bsink)
         gst_sink->window,
 #endif
         "destroy", G_CALLBACK (window_destroy_cb), gst_sink);
-
-#if defined(BUILD_FOR_GTK4)
-    gtk_window_present (GTK_WINDOW (gst_sink->window));
-#endif
   }
 
   return TRUE;
@@ -436,7 +427,9 @@ gst_gtk_base_sink_stop (GstBaseSink * bsink)
 static void
 gst_gtk_widget_show_all_and_unref (GtkWidget * widget)
 {
-#if !defined(BUILD_FOR_GTK4)
+#if defined(BUILD_FOR_GTK4)
+  gtk_window_present (GTK_WINDOW (widget));
+#else
   gtk_widget_show_all (widget);
 #endif
   g_object_unref (widget);
