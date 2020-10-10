@@ -150,6 +150,8 @@ gst_gtk_base_sink_finalize (GObject * object)
 {
   GstGtkBaseSink *gtk_sink = GST_GTK_BASE_SINK (object);
 
+  GST_DEBUG ("running sink_finalize");
+
   GST_OBJECT_LOCK (gtk_sink);
   if (gtk_sink->window && gtk_sink->window_destroy_id)
     g_signal_handler_disconnect (gtk_sink->window, gtk_sink->window_destroy_id);
@@ -169,7 +171,6 @@ widget_destroy_cb (GtkWidget * widget, GstGtkBaseSink * gtk_sink)
 
   GST_OBJECT_LOCK (gtk_sink);
   g_clear_object (&gtk_sink->widget);
-  gtk_sink->widget = NULL;
   GST_OBJECT_UNLOCK (gtk_sink);
 }
 
@@ -185,7 +186,7 @@ window_destroy_cb (GtkWidget * widget, GstGtkBaseSink * gtk_sink)
   /* Remove previously taken widget reference via "gst_object_ref_sink"
    * if it still exists at this point in order to destroy widget */
   if (gtk_sink->widget != NULL)
-    gst_object_unref (gtk_sink->widget);
+    g_object_unref (gtk_sink->widget);
 }
 
 static GtkGstBaseWidget *
@@ -221,7 +222,7 @@ gst_gtk_base_sink_get_widget (GstGtkBaseSink * gtk_sink)
       "ignore-alpha", G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 #endif
 
-  /* Take the floating ref, other wise the destruction of the container will
+  /* Take the floating ref, otherwise the destruction of the container will
    * make this widget disappear possibly before we are done. */
   gst_object_ref_sink (gtk_sink->widget);
   gtk_sink->widget_destroy_id = g_signal_connect (gtk_sink->widget, "destroy",
@@ -403,6 +404,8 @@ gst_gtk_base_sink_stop_on_main (GstBaseSink * bsink)
 {
   GstGtkBaseSink *gst_sink = GST_GTK_BASE_SINK (bsink);
 
+  GST_DEBUG ("running stop_on_main");
+
   if (gst_sink->window) {
 #if defined(BUILD_FOR_GTK4)
     gtk_window_destroy (GTK_WINDOW (gst_sink->window));
@@ -420,6 +423,8 @@ static gboolean
 gst_gtk_base_sink_stop (GstBaseSink * bsink)
 {
   GstGtkBaseSink *gst_sink = GST_GTK_BASE_SINK (bsink);
+
+  GST_DEBUG ("running sink_stop");
 
   if (gst_sink->window)
     return ! !gst_gtk_invoke_on_main ((GThreadFunc)
