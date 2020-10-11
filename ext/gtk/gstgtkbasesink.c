@@ -540,7 +540,7 @@ gst_gtk_base_sink_show_frame (GstVideoSink * vsink, GstBuffer * buf)
 
   GST_OBJECT_LOCK (vsink);
 
-  if (gtk_sink->widget == NULL) {
+  if (!GTK_IS_WIDGET (gtk_sink->widget)) {
     GST_OBJECT_UNLOCK (gtk_sink);
     GST_ELEMENT_ERROR (gtk_sink, RESOURCE, NOT_FOUND,
         ("%s", "Output widget was destroyed"), (NULL));
