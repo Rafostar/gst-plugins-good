@@ -164,7 +164,7 @@ gst_gtk_base_sink_finalize (GObject * object)
 
 static void
 widget_destroy_cb (GtkWidget * widget, GstGtkBaseSink * gtk_sink,
-    const char * prop_name)
+    gconstpointer prop_name)
 {
   GST_OBJECT_LOCK (gtk_sink);
 
