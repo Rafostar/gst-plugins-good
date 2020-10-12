@@ -415,7 +415,7 @@ static void
 gst_gtk_window_show_all_and_unref (GtkWidget * window)
 {
 #if defined(BUILD_FOR_GTK4)
-  gtk_window_present (window);
+  gtk_window_present (GTK_WINDOW (window));
 #else
   gtk_widget_show_all (window);
 #endif
