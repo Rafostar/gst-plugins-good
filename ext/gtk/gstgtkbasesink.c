@@ -150,8 +150,6 @@ gst_gtk_base_sink_finalize (GObject * object)
 {
   GstGtkBaseSink *gtk_sink = GST_GTK_BASE_SINK (object);
 
-  GST_DEBUG ("running sink_finalize");
-
   GST_OBJECT_LOCK (gtk_sink);
   if (gtk_sink->window && gtk_sink->window_destroy_id)
     g_signal_handler_disconnect (gtk_sink->window, gtk_sink->window_destroy_id);
@@ -163,24 +161,13 @@ gst_gtk_base_sink_finalize (GObject * object)
 
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
-/*
+
 static void
 widget_destroy_cb (GtkWidget * widget, GstGtkBaseSink * gtk_sink)
 {
-  GST_DEBUG ("running widget destroy");
-
+  /* Widget is a gtk_sink property, so lock it */
   GST_OBJECT_LOCK (gtk_sink);
-  g_clear_object (&gtk_sink->widget);
-  GST_OBJECT_UNLOCK (gtk_sink);
-}
-*/
-static void
-window_destroy_cb (GtkWidget * widget, GstGtkBaseSink * gtk_sink)
-{
-  GST_DEBUG ("running window destroy");
-
-  GST_OBJECT_LOCK (gtk_sink);
-  gtk_sink->window = NULL;
+  widget = NULL;
   GST_OBJECT_UNLOCK (gtk_sink);
 }
 
@@ -217,12 +204,9 @@ gst_gtk_base_sink_get_widget (GstGtkBaseSink * gtk_sink)
       "ignore-alpha", G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 #endif
 
-  /* Take the floating ref, otherwise the destruction of the container will
-   * make this widget disappear possibly before we are done. 
-  gst_object_ref_sink (gtk_sink->widget);
   gtk_sink->widget_destroy_id = g_signal_connect (gtk_sink->widget, "destroy",
       G_CALLBACK (widget_destroy_cb), gtk_sink);
-*/
+
   /* back pointer */
   gtk_gst_base_widget_set_element (GTK_GST_BASE_WIDGET (gtk_sink->widget),
       GST_ELEMENT (gtk_sink));
@@ -377,7 +361,7 @@ gst_gtk_base_sink_start_on_main (GstBaseSink * bsink)
 #else
         gst_sink->window,
 #endif
-        "destroy", G_CALLBACK (window_destroy_cb), gst_sink);
+        "destroy", G_CALLBACK (widget_destroy_cb), gst_sink);
   }
 
   return TRUE;
@@ -394,8 +378,6 @@ static gboolean
 gst_gtk_base_sink_stop_on_main (GstBaseSink * bsink)
 {
   GstGtkBaseSink *gst_sink = GST_GTK_BASE_SINK (bsink);
-
-  GST_DEBUG ("running stop_on_main");
 
   if (gst_sink->window) {
 #if defined(BUILD_FOR_GTK4)
@@ -415,8 +397,6 @@ gst_gtk_base_sink_stop (GstBaseSink * bsink)
 {
   GstGtkBaseSink *gst_sink = GST_GTK_BASE_SINK (bsink);
 
-  GST_DEBUG ("running sink_stop");
-
   if (gst_sink->window)
     return ! !gst_gtk_invoke_on_main ((GThreadFunc)
         gst_gtk_base_sink_stop_on_main, bsink);
@@ -425,14 +405,14 @@ gst_gtk_base_sink_stop (GstBaseSink * bsink)
 }
 
 static void
-gst_gtk_widget_show_all_and_unref (GtkWidget * widget)
+gst_gtk_window_show_all_and_unref (GtkWidget * window)
 {
 #if defined(BUILD_FOR_GTK4)
-  gtk_window_present (GTK_WINDOW (widget));
+  gtk_window_present (window);
 #else
-  gtk_widget_show_all (widget);
+  gtk_widget_show_all (window);
 #endif
-  g_object_unref (widget);
+  g_object_unref (window);
 }
 
 static GstStateChangeReturn
@@ -460,7 +440,7 @@ gst_gtk_base_sink_change_state (GstElement * element, GstStateChange transition)
       GST_OBJECT_UNLOCK (gtk_sink);
 
       if (window)
-        gst_gtk_invoke_on_main ((GThreadFunc) gst_gtk_widget_show_all_and_unref,
+        gst_gtk_invoke_on_main ((GThreadFunc) gst_gtk_window_show_all_and_unref,
             window);
 
       break;
@@ -540,7 +520,7 @@ gst_gtk_base_sink_show_frame (GstVideoSink * vsink, GstBuffer * buf)
 
   GST_OBJECT_LOCK (vsink);
 
-  if (!GTK_IS_WIDGET (gtk_sink->widget)) {
+  if (gtk_sink->widget == NULL) {
     GST_OBJECT_UNLOCK (gtk_sink);
     GST_ELEMENT_ERROR (gtk_sink, RESOURCE, NOT_FOUND,
         ("%s", "Output widget was destroyed"), (NULL));
