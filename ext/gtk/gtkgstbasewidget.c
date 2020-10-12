@@ -395,7 +395,8 @@ gtk_gst_base_widget_button_event (
 
       gst_navigation_send_mouse_event (GST_NAVIGATION (element), key_type,
 #if defined(BUILD_FOR_GTK4)
-          gdk_button_event_get_button (event),
+          /* Gesture is set to ignore other buttons so we do not have to check */
+          GDK_BUTTON_PRIMARY,
 #else
           button,
 #endif
