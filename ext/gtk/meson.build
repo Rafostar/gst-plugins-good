@@ -6,6 +6,8 @@ gtk_sources = [
   'gtkgstbasewidget.c',
 ]
 gtk_lib_added = false
+gtk_dep = dependency('gtk+-3.0', required : get_option('gtk3'))
+gtk4_dep = dependency('gtk4', required : get_option('gtk4'))
 
 foreach gtk_ver : gtk_versions
   gtkv = 'gtk' + gtk_ver.to_string()
@@ -23,13 +25,11 @@ foreach gtk_ver : gtk_versions
   endif
 
   min_ver = gtk_ver >= 4 ? '3.99.2'          : '3.24.0'
-  pkg_dep = gtk_ver >= 4 ? gtkv              : 'gtk+-3.0'
   x11_dep = gtk_ver >= 4 ? gtkv + '-x11'     : 'gtk+-x11-3.0'
   way_dep = gtk_ver >= 4 ? gtkv + '-wayland' : 'gtk+-wayland-3.0'
+  lib_dep = gtk_ver >= 4 ? gtk4_dep          : gtk_dep
 
-  gtk_dep = dependency(pkg_dep, required : gtk_state)
-
-  if not gtk_dep.found() or not gtk_dep.version().version_compare('>=' + min_ver)
+  if not lib_dep.found() or not lib_dep.version().version_compare('>=' + min_ver)
     continue
   endif
 
@@ -97,7 +97,7 @@ foreach gtk_ver : gtk_versions
     c_args : gst_plugins_good_args + gtk_defines,
     link_args : noseh_link_args,
     include_directories : [configinc],
-    dependencies : [gtk_dep, gstvideo_dep, gstbase_dep, libm] + optional_deps,
+    dependencies : [lib_dep, gstvideo_dep, gstbase_dep, libm] + optional_deps,
     install : is_gstgtk_install,
     install_dir : plugins_install_dir,
   )
