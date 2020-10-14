@@ -53,6 +53,7 @@ option('dv1394', type : 'feature', value : 'auto', description : 'Digital IEEE13
 option('flac', type : 'feature', value : 'auto', description : 'FLAC audio codec plugin')
 option('gdk-pixbuf', type : 'feature', value : 'auto', description : 'gdk-pixbuf image decoder, overlay, and sink plugin')
 option('gtk3', type : 'feature', value : 'auto', description : 'GTK+ video sink plugin')
+option('gtk4', type : 'feature', value : 'auto', description : 'GTK4 video sink plugin')
 option('jack', type : 'feature', value : 'auto', description : 'JACK audio source/sink plugin')
 option('jpeg', type : 'feature', value : 'auto', description : 'JPEG image codec plugin')
 option('lame', type : 'feature', value : 'auto', description : 'LAME mp3 audio encoder plugin')
@@ -73,6 +74,9 @@ option('twolame', type : 'feature', value : 'auto', description : 'twolame mp2 a
 option('vpx', type : 'feature', value : 'auto', description : 'VP8 and VP9 video codec plugin')
 option('waveform', type : 'feature', value : 'auto', description : 'Windows waveform audio sink plugin')
 option('wavpack', type : 'feature', value : 'auto', description : 'Wavpack audio codec plugin')
+
+# gtk plugin options
+option('gtk4-experiments', type : 'boolean', value : false, description : 'Allow compiling experimental GTK4 plugin')
 
 # rpicamsrc plugin options
 option('rpicamsrc', type : 'feature', value : 'auto', description : 'Raspberry Pi camera module plugin')

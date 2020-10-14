@@ -1,6 +1,7 @@
 /*
  * GStreamer
  * Copyright (C) 2015 Matthew Waters <matthew@centricular.com>
+ * Copyright (C) 2020 Rafał Dzięgiel <rafostar.github@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -73,6 +74,22 @@ gtk_gst_base_widget_get_preferred_height (GtkWidget * widget, gint * min,
   if (natural)
     *natural = video_height;
 }
+
+#if defined(BUILD_FOR_GTK4)
+static void
+gtk_gst_base_widget_measure (GtkWidget * widget, GtkOrientation orientation,
+    int for_size, int *min, int *natural,
+    int *minimum_baseline, int *natural_baseline)
+{
+  if (orientation == GTK_ORIENTATION_HORIZONTAL)
+    gtk_gst_base_widget_get_preferred_width (widget, min, natural);
+  else
+    gtk_gst_base_widget_get_preferred_height (widget, min, natural);
+
+  *minimum_baseline = -1;
+  *natural_baseline = -1;
+}
+#endif
 
 static void
 gtk_gst_base_widget_set_property (GObject * object, guint prop_id,
@@ -235,22 +252,46 @@ _gdk_key_to_navigation_string (guint keyval)
   }
 }
 
-static gboolean
-gtk_gst_base_widget_key_event (GtkWidget * widget, GdkEventKey * event)
+static GdkEvent *
+_get_current_event (GtkEventController * controller)
 {
+#if defined(BUILD_FOR_GTK4)
+  return gtk_event_controller_get_current_event (controller);
+#else
+  return gtk_get_current_event ();
+#endif
+}
+
+static void
+_gdk_event_free (GdkEvent * event)
+{
+#if !defined(BUILD_FOR_GTK4)
+  if (event)
+    gdk_event_free (event);
+#endif
+}
+
+static gboolean
+gtk_gst_base_widget_key_event (GtkEventControllerKey * key_controller,
+    guint keyval, guint keycode, GdkModifierType state)
+{
+  GtkEventController *controller = GTK_EVENT_CONTROLLER (key_controller);
+  GtkWidget *widget = gtk_event_controller_get_widget (controller);
   GtkGstBaseWidget *base_widget = GTK_GST_BASE_WIDGET (widget);
   GstElement *element;
 
   if ((element = g_weak_ref_get (&base_widget->element))) {
     if (GST_IS_NAVIGATION (element)) {
-      const gchar *str = _gdk_key_to_navigation_string (event->keyval);
-      const gchar *key_type =
-          event->type == GDK_KEY_PRESS ? "key-press" : "key-release";
+      GdkEvent *event = _get_current_event (controller);
+      const gchar *str = _gdk_key_to_navigation_string (keyval);
 
-      if (!str)
-        str = event->string;
-
-      gst_navigation_send_key_event (GST_NAVIGATION (element), key_type, str);
+      if (str) {
+        const gchar *key_type =
+            gdk_event_get_event_type (event) ==
+            GDK_KEY_PRESS ? "key-press" : "key-release";
+        gst_navigation_send_key_event (GST_NAVIGATION (element), key_type, str);
+      }
+      _gdk_event_free (event);
     }
     g_object_unref (element);
   }
@@ -325,22 +366,43 @@ _display_size_to_stream_size (GtkGstBaseWidget * base_widget, gdouble x,
 }
 
 static gboolean
-gtk_gst_base_widget_button_event (GtkWidget * widget, GdkEventButton * event)
+gtk_gst_base_widget_button_event (
+#if defined(BUILD_FOR_GTK4)
+    GtkGestureClick * gesture,
+#else
+    GtkGestureMultiPress * gesture,
+#endif
+    int n_press, double x, double y)
 {
+  GtkEventController *controller = GTK_EVENT_CONTROLLER (gesture);
+  GtkWidget *widget = gtk_event_controller_get_widget (controller);
   GtkGstBaseWidget *base_widget = GTK_GST_BASE_WIDGET (widget);
   GstElement *element;
 
   if ((element = g_weak_ref_get (&base_widget->element))) {
     if (GST_IS_NAVIGATION (element)) {
+      GdkEvent *event = _get_current_event (controller);
       const gchar *key_type =
-          event->type ==
-          GDK_BUTTON_PRESS ? "mouse-button-press" : "mouse-button-release";
-      gdouble x, y;
+          gdk_event_get_event_type (event) == GDK_BUTTON_PRESS
+          ? "mouse-button-press" : "mouse-button-release";
+      gdouble stream_x, stream_y;
+#if !defined(BUILD_FOR_GTK4)
+      guint button;
+      gdk_event_get_button (event, &button);
+#endif
 
-      _display_size_to_stream_size (base_widget, event->x, event->y, &x, &y);
+      _display_size_to_stream_size (base_widget, x, y, &stream_x, &stream_y);
 
       gst_navigation_send_mouse_event (GST_NAVIGATION (element), key_type,
-          event->button, x, y);
+#if defined(BUILD_FOR_GTK4)
+          /* Gesture is set to ignore other buttons so we do not have to check */
+          GDK_BUTTON_PRIMARY,
+#else
+          button,
+#endif
+          stream_x, stream_y);
+
+      _gdk_event_free (event);
     }
     g_object_unref (element);
   }
@@ -349,19 +411,30 @@ gtk_gst_base_widget_button_event (GtkWidget * widget, GdkEventButton * event)
 }
 
 static gboolean
-gtk_gst_base_widget_motion_event (GtkWidget * widget, GdkEventMotion * event)
+gtk_gst_base_widget_motion_event (GtkEventControllerMotion * motion_controller,
+    double x, double y)
 {
+  GtkEventController *controller = GTK_EVENT_CONTROLLER (motion_controller);
+  GtkWidget *widget = gtk_event_controller_get_widget (controller);
   GtkGstBaseWidget *base_widget = GTK_GST_BASE_WIDGET (widget);
   GstElement *element;
 
+  /* Sometimes GTK might generate motion events with the same coords during
+   * window redraws, so we check for the differences to prevent that */
+  if (base_widget->cursor_coords_x == x && base_widget->cursor_coords_y == y)
+    return FALSE;
+
+  base_widget->cursor_coords_x = x;
+  base_widget->cursor_coords_y = y;
+
   if ((element = g_weak_ref_get (&base_widget->element))) {
     if (GST_IS_NAVIGATION (element)) {
-      gdouble x, y;
+      gdouble stream_x, stream_y;
 
-      _display_size_to_stream_size (base_widget, event->x, event->y, &x, &y);
+      _display_size_to_stream_size (base_widget, x, y, &stream_x, &stream_y);
 
       gst_navigation_send_mouse_event (GST_NAVIGATION (element), "mouse-move",
-          0, x, y);
+          0, stream_x, stream_y);
     }
     g_object_unref (element);
   }
@@ -395,22 +468,27 @@ gtk_gst_base_widget_class_init (GtkGstBaseWidgetClass * klass)
           "When enabled, alpha will be ignored and converted to black",
           DEFAULT_IGNORE_ALPHA, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
+#if defined(BUILD_FOR_GTK4)
+  widget_klass->measure = gtk_gst_base_widget_measure;
+#else
   widget_klass->get_preferred_width = gtk_gst_base_widget_get_preferred_width;
   widget_klass->get_preferred_height = gtk_gst_base_widget_get_preferred_height;
-  widget_klass->key_press_event = gtk_gst_base_widget_key_event;
-  widget_klass->key_release_event = gtk_gst_base_widget_key_event;
-  widget_klass->button_press_event = gtk_gst_base_widget_button_event;
-  widget_klass->button_release_event = gtk_gst_base_widget_button_event;
-  widget_klass->motion_notify_event = gtk_gst_base_widget_motion_event;
+#endif
 
   GST_DEBUG_CATEGORY_INIT (gst_debug_gtk_base_widget, "gtkbasewidget", 0,
-      "Gtk Video Base Widget");
+      "GTK Video Base Widget");
 }
 
 void
 gtk_gst_base_widget_init (GtkGstBaseWidget * widget)
 {
-  int event_mask;
+  /* Event controllers were added in GTK 3.24 */
+  GtkEventController *key_controller;
+  GtkEventController *motion_controller;
+  GtkGesture *click_gesture;
+
+  widget->cursor_coords_x = 0;
+  widget->cursor_coords_y = 0;
 
   widget->force_aspect_ratio = DEFAULT_FORCE_ASPECT_RATIO;
   widget->par_n = DEFAULT_PAR_N;
@@ -423,14 +501,46 @@ gtk_gst_base_widget_init (GtkGstBaseWidget * widget)
   g_weak_ref_init (&widget->element, NULL);
   g_mutex_init (&widget->lock);
 
+  key_controller = gtk_event_controller_key_new (
+#if !defined(BUILD_FOR_GTK4)
+      GTK_WIDGET (widget)
+#endif
+      );
+  g_signal_connect (key_controller, "key-pressed",
+      G_CALLBACK (gtk_gst_base_widget_key_event), NULL);
+  g_signal_connect (key_controller, "key-released",
+      G_CALLBACK (gtk_gst_base_widget_key_event), NULL);
+
+  motion_controller = gtk_event_controller_motion_new (
+#if !defined(BUILD_FOR_GTK4)
+      GTK_WIDGET (widget)
+#endif
+      );
+  g_signal_connect (motion_controller, "motion",
+      G_CALLBACK (gtk_gst_base_widget_motion_event), NULL);
+
+  click_gesture =
+#if defined(BUILD_FOR_GTK4)
+      gtk_gesture_click_new ();
+#else
+      gtk_gesture_multi_press_new (GTK_WIDGET (widget));
+#endif
+  g_signal_connect (click_gesture, "pressed",
+      G_CALLBACK (gtk_gst_base_widget_button_event), NULL);
+  g_signal_connect (click_gesture, "released",
+      G_CALLBACK (gtk_gst_base_widget_button_event), NULL);
+
+#if defined(BUILD_FOR_GTK4)
+  gtk_widget_set_focusable (GTK_WIDGET (widget), TRUE);
+  gtk_gesture_single_set_button (GTK_GESTURE_SINGLE (click_gesture),
+      GDK_BUTTON_PRIMARY);
+
+  gtk_widget_add_controller (GTK_WIDGET (widget), key_controller);
+  gtk_widget_add_controller (GTK_WIDGET (widget), motion_controller);
+  gtk_widget_add_controller (GTK_WIDGET (widget),
+      GTK_EVENT_CONTROLLER (click_gesture));
+#endif
   gtk_widget_set_can_focus (GTK_WIDGET (widget), TRUE);
-  event_mask = gtk_widget_get_events (GTK_WIDGET (widget));
-  event_mask |= GDK_KEY_PRESS_MASK
-      | GDK_KEY_RELEASE_MASK
-      | GDK_BUTTON_PRESS_MASK
-      | GDK_BUTTON_RELEASE_MASK
-      | GDK_POINTER_MOTION_MASK | GDK_BUTTON_MOTION_MASK;
-  gtk_widget_set_events (GTK_WIDGET (widget), event_mask);
 }
 
 void

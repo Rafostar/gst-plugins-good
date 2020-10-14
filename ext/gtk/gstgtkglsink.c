@@ -1,6 +1,7 @@
 /*
  * GStreamer
  * Copyright (C) 2015 Matthew Waters <matthew@centricular.com>
+ * Copyright (C) 2020 Rafał Dzięgiel <rafostar.github@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -23,12 +24,18 @@
  * @title: gtkglsink
  */
 
+/**
+ * SECTION:element-gtk4glsink
+ * @title: gtk4glsink
+ */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #include <gst/gl/gstglfuncs.h>
 
+#include "gtkconfig.h"
 #include "gstgtkglsink.h"
 #include "gtkgstglwidget.h"
 
@@ -58,7 +65,7 @@ static GstStaticPadTemplate gst_gtk_gl_sink_template =
 #define gst_gtk_gl_sink_parent_class parent_class
 G_DEFINE_TYPE_WITH_CODE (GstGtkGLSink, gst_gtk_gl_sink,
     GST_TYPE_GTK_BASE_SINK, GST_DEBUG_CATEGORY_INIT (gst_debug_gtk_gl_sink,
-        "gtkglsink", 0, "Gtk GL Video Sink"));
+        GTKCONFIG_GLSINK, 0, GTKCONFIG_NAME " GL Video Sink"));
 
 static void
 gst_gtk_gl_sink_class_init (GstGtkGLSinkClass * klass)
@@ -82,11 +89,16 @@ gst_gtk_gl_sink_class_init (GstGtkGLSinkClass * klass)
   gstbasesink_class->get_caps = gst_gtk_gl_sink_get_caps;
 
   gstgtkbasesink_class->create_widget = gtk_gst_gl_widget_new;
-  gstgtkbasesink_class->window_title = "Gtk+ GL renderer";
+  gstgtkbasesink_class->window_title = GTKCONFIG_NAME " GL Renderer";
 
-  gst_element_class_set_metadata (gstelement_class, "Gtk GL Video Sink",
+  gst_element_class_set_metadata (gstelement_class,
+      GTKCONFIG_NAME " GL Video Sink",
       "Sink/Video", "A video sink that renders to a GtkWidget using OpenGL",
-      "Matthew Waters <matthew@centricular.com>");
+      "Matthew Waters <matthew@centricular.com>"
+#if defined(BUILD_FOR_GTK4)
+      ", Rafał Dzięgiel <rafostar.github@gmail.com>"
+#endif
+      );
 
   gst_element_class_add_static_pad_template (gstelement_class,
       &gst_gtk_gl_sink_template);
@@ -119,6 +131,7 @@ gst_gtk_gl_sink_query (GstBaseSink * bsink, GstQuery * query)
   return res;
 }
 
+#if !defined(BUILD_FOR_GTK4)
 static void
 _size_changed_cb (GtkWidget * widget, GdkRectangle * rectangle,
     GstGtkGLSink * gtk_sink)
@@ -138,11 +151,12 @@ _size_changed_cb (GtkWidget * widget, GdkRectangle * rectangle,
   GST_OBJECT_UNLOCK (gtk_sink);
 
   if (reconfigure) {
-    GST_DEBUG_OBJECT (gtk_sink, "Sending reconfigure event on sinkpad.");
+    GST_DEBUG_OBJECT (gtk_sink, "Sending reconfigure event on sinkpad");
     gst_pad_push_event (GST_BASE_SINK (gtk_sink)->sinkpad,
         gst_event_new_reconfigure ());
   }
 }
+#endif
 
 static void
 destroy_cb (GtkWidget * widget, GstGtkGLSink * gtk_sink)
@@ -171,20 +185,20 @@ gst_gtk_gl_sink_start (GstBaseSink * bsink)
   /* After this point, gtk_sink->widget will always be set */
   gst_widget = GTK_GST_GL_WIDGET (base_sink->widget);
 
+#if !defined(BUILD_FOR_GTK4)
   /* Track the allocation size */
   gtk_sink->size_allocate_sig_handler =
       g_signal_connect (gst_widget, "size-allocate",
       G_CALLBACK (_size_changed_cb), gtk_sink);
+#endif
 
   gtk_sink->widget_destroy_sig_handler =
       g_signal_connect (gst_widget, "destroy", G_CALLBACK (destroy_cb),
       gtk_sink);
 
-  _size_changed_cb (GTK_WIDGET (gst_widget), NULL, gtk_sink);
-
   if (!gtk_gst_gl_widget_init_winsys (gst_widget)) {
     GST_ELEMENT_ERROR (bsink, RESOURCE, NOT_FOUND, ("%s",
-            "Failed to initialize OpenGL with Gtk"), (NULL));
+            "Failed to initialize OpenGL with GTK"), (NULL));
     return FALSE;
   }
 
@@ -194,7 +208,7 @@ gst_gtk_gl_sink_start (GstBaseSink * bsink)
 
   if (!gtk_sink->display || !gtk_sink->context || !gtk_sink->gtk_context) {
     GST_ELEMENT_ERROR (bsink, RESOURCE, NOT_FOUND, ("%s",
-            "Failed to retrieve OpenGL context from Gtk"), (NULL));
+            "Failed to retrieve OpenGL context from GTK"), (NULL));
     return FALSE;
   }
 

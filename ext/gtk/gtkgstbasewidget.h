@@ -1,6 +1,7 @@
 /*
  * GStreamer
  * Copyright (C) 2015 Matthew Waters <matthew@centricular.com>
+ * Copyright (C) 2020 Rafał Dzięgiel <rafostar.github@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -25,6 +26,10 @@
 #include <gst/gst.h>
 #include <gst/video/video.h>
 
+#if !defined(BUILD_FOR_GTK4)
+#include <gdk/gdk.h>
+#endif
+
 #define GTK_GST_BASE_WIDGET(w)         ((GtkGstBaseWidget *)(w))
 #define GTK_GST_BASE_WIDGET_CLASS(k)   ((GtkGstBaseWidgetClass *)(k))
 #define GTK_GST_BASE_WIDGET_LOCK(w)    g_mutex_lock(&((GtkGstBaseWidget*)(w))->lock)
@@ -38,10 +43,10 @@ typedef struct _GtkGstBaseWidgetClass GtkGstBaseWidgetClass;
 struct _GtkGstBaseWidget
 {
   union {
+#if !defined(BUILD_FOR_GTK4)
     GtkDrawingArea drawing_area;
-#if GTK_CHECK_VERSION(3, 15, 0)
-    GtkGLArea gl_area;
 #endif
+    GtkGLArea gl_area;
   } parent;
 
   /* properties */
@@ -63,6 +68,10 @@ struct _GtkGstBaseWidget
   guint display_ratio_num;
   guint display_ratio_den;
 
+  /* cursor motion coords */
+  gdouble cursor_coords_x;
+  gdouble cursor_coords_y;
+
   /*< private >*/
   GMutex lock;
   GWeakRef element;
@@ -74,10 +83,10 @@ struct _GtkGstBaseWidget
 struct _GtkGstBaseWidgetClass
 {
   union {
+#if !defined(BUILD_FOR_GTK4)
     GtkDrawingAreaClass drawing_area_class;
-#if GTK_CHECK_VERSION(3, 15, 0)
-    GtkGLAreaClass gl_area_class;
 #endif
+    GtkGLAreaClass gl_area_class;
   } parent_class;
 };
 
