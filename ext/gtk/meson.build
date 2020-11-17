@@ -6,8 +6,13 @@ gtk_sources = [
   'gtkgstbasewidget.c',
 ]
 gtk_lib_added = false
+
+# Variables used for building tests
 gtk_dep = dependency('gtk+-3.0', required : get_option('gtk3'))
+gtk_optional_deps = []
+
 gtk4_dep = dependency('gtk4', required : get_option('gtk4'))
+gtk4_optional_deps = []
 
 foreach gtk_ver : gtk_versions
   gtkv = 'gtk' + gtk_ver.to_string()
@@ -25,8 +30,8 @@ foreach gtk_ver : gtk_versions
   endif
 
   min_ver = gtk_ver >= 4 ? '3.99.2'          : '3.24.0'
-  x11_dep = gtk_ver >= 4 ? gtkv + '-x11'     : 'gtk+-x11-3.0'
-  way_dep = gtk_ver >= 4 ? gtkv + '-wayland' : 'gtk+-wayland-3.0'
+  x11_str = gtk_ver >= 4 ? gtkv + '-x11'     : 'gtk+-x11-3.0'
+  way_str = gtk_ver >= 4 ? gtkv + '-wayland' : 'gtk+-wayland-3.0'
   lib_dep = gtk_ver >= 4 ? gtk4_dep          : gtk_dep
 
   if not lib_dep.found() or not lib_dep.version().version_compare('>=' + min_ver)
@@ -49,7 +54,7 @@ foreach gtk_ver : gtk_versions
   if have_gstgl
     if gst_gl_have_window_x11 and gst_gl_have_platform_glx
       # FIXME: automagic
-      gtk_x11_dep = dependency(x11_dep, required : false)
+      gtk_x11_dep = dependency(x11_str, required : false)
       if gtk_x11_dep.found()
         optional_deps += [gtk_x11_dep, gstglx11_dep]
         have_gtk_gl_windowing = true
@@ -58,7 +63,7 @@ foreach gtk_ver : gtk_versions
 
     if gst_gl_have_window_wayland and gst_gl_have_platform_egl
       # FIXME: automagic
-      gtk_wayland_dep = dependency(way_dep, required : false)
+      gtk_wayland_dep = dependency(way_str, required : false)
       if gtk_wayland_dep.found()
         optional_deps += [gtk_wayland_dep, gstglegl_dep, gstglwayland_dep]
         have_gtk_gl_windowing = true
@@ -80,6 +85,12 @@ foreach gtk_ver : gtk_versions
     if gtk_ver == 4
       gtk_defines += '-DBUILD_FOR_GTK4'
     endif
+  endif
+
+  if gtk_ver == 3
+    gtk_optional_deps = optional_deps
+  elif gtk_ver == 4
+    gtk4_optional_deps = optional_deps
   endif
 
   lib_name = 'gstgtk'

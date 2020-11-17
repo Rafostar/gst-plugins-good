@@ -186,15 +186,19 @@ gst_gtk_gl_sink_start (GstBaseSink * bsink)
   gst_widget = GTK_GST_GL_WIDGET (base_sink->widget);
 
 #if !defined(BUILD_FOR_GTK4)
-  /* Track the allocation size */
-  gtk_sink->size_allocate_sig_handler =
-      g_signal_connect (gst_widget, "size-allocate",
-      G_CALLBACK (_size_changed_cb), gtk_sink);
+  if (!gtk_sink->size_allocate_sig_handler) {
+    /* Track the allocation size */
+    gtk_sink->size_allocate_sig_handler =
+        g_signal_connect (gst_widget, "size-allocate",
+        G_CALLBACK (_size_changed_cb), gtk_sink);
+  }
 #endif
 
-  gtk_sink->widget_destroy_sig_handler =
-      g_signal_connect (gst_widget, "destroy", G_CALLBACK (destroy_cb),
-      gtk_sink);
+  if (!gtk_sink->widget_destroy_sig_handler) {
+    gtk_sink->widget_destroy_sig_handler =
+        g_signal_connect (gst_widget, "destroy", G_CALLBACK (destroy_cb),
+        gtk_sink);
+  }
 
   if (!gtk_gst_gl_widget_init_winsys (gst_widget)) {
     GST_ELEMENT_ERROR (bsink, RESOURCE, NOT_FOUND, ("%s",

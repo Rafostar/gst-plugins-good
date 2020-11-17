@@ -57,6 +57,7 @@ struct _GtkGstBaseWidget
   gint display_width;
   gint display_height;
 
+  gboolean ignore_textures;
   gboolean negotiated;
   GstBuffer *pending_buffer;
   GstBuffer *buffer;
